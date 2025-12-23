@@ -26,57 +26,61 @@
             <button type="submit">Send</button>
         </form>
     </div>
-  <script>
-    const userCode = "{{ user_code }}";
-    const token = "{{ token }}";
-    const messagesDiv = document.getElementById("messages");
+    <script>
+        const userCode = "{{ user_code }}";
+        const token = "{{ token }}";
+        const messagesDiv = document.getElementById("messages");
 
-    // Function to load messages
-    async function loadMessages() {
-        const response = await fetch("/inbox/" + userCode + "?token=" + token);
-        const data = await response.json();
+        // Load messages from server
+        async function loadMessages() {
+            try {
+                const response = await fetch(`/inbox/${userCode}?token=${token}`);
+                const data = await response.json();
+                messagesDiv.innerHTML = "";  // clear messages
+                data.messages.forEach(m => {
+                    const div = document.createElement("div");
+                    div.className = "message";
+                    div.innerHTML = `<strong>${m.from_username}:</strong> ${m.content}`;
+                    messagesDiv.appendChild(div);
+                });
+                // Scroll to bottom
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } catch (err) {
+                console.error("Failed to load messages:", err);
+            }
+        }
 
-        // Clear div but keep scroll at bottom
-        messagesDiv.innerHTML = "";
-        data.messages.forEach(m => {
-            const div = document.createElement("div");
-            div.className = "message";
-            div.innerHTML = `<strong>${m.from_username}:</strong> ${m.content}`;
-            messagesDiv.appendChild(div);
+        // Initial load
+        loadMessages();
+
+        // Auto-refresh every 1.5 seconds
+        setInterval(loadMessages, 1500);
+
+        // Send message
+        const form = document.getElementById("chatForm");
+        form.addEventListener("submit", async e => {
+            e.preventDefault();
+            const content = document.getElementById("msgContent").value;
+            if (!content) return;
+
+            await fetch("/send_message", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    sender_code: userCode,
+                    token: token,
+                    receiver_username: "public",
+                    content: content
+                })
+            });
+
+            document.getElementById("msgContent").value = "";  // clear input
+            loadMessages();  // reload messages immediately
         });
+            
+    </script>
 
-        // Scroll to bottom automatically
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
 
-    // Initial load
-    loadMessages();
-
-    // Auto-refresh every 2 seconds
-    setInterval(loadMessages, 2000);
-
-    // Send message
-    const form = document.getElementById("chatForm");
-    form.addEventListener("submit", async e => {
-        e.preventDefault();
-        const content = document.getElementById("msgContent").value;
-        if (!content) return;
-
-        await fetch("/send_message", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                sender_code: userCode,
-                token: token,
-                receiver_username: "public",
-                content: content
-            })
-        });
-
-        document.getElementById("msgContent").value = "";  // clear input
-        loadMessages(); // reload messages without losing chat
-    });
- </script>
 
      
 </body>
