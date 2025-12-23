@@ -36,7 +36,8 @@
             try {
                 const response = await fetch(`/inbox/${userCode}?token=${token}`);
                 const data = await response.json();
-                messagesDiv.innerHTML = "";  // clear messages
+                messagesDiv.innerHTML = ""; 
+                 // clear messages
                 data.messages.forEach(m => {
                     const div = document.createElement("div");
                     div.className = "message";
